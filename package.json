@@ -1,12 +1,15 @@
-
 {
-  "name": "hand-palm-ai",
+  "name": "palm-reading-ai",
   "version": "1.0.0",
-  "type": "module",
+  "main": "index.js",
   "scripts": {
-    "start": "vercel dev"
+    "dev": "node server.js",
+    "start": "node server.js"
   },
   "dependencies": {
-    "node-fetch": "^3.3.2"
-  }
+    "express": "^4.19.2",
+    "node-fetch": "^3.3.2",
+    "cors": "^2.8.5"
+  },
+  "type": "module"
 }
