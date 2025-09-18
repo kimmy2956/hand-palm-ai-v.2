@@ -1,64 +1,55 @@
+import express from "express";
 import fetch from "node-fetch";
 
-export const config = { api: { bodyParser: { sizeLimit: "5mb" } } };
+const router = express.Router();
 
-export default async function handler(req, res) {
-  if (req.method !== "POST") {
-    return res.status(405).json({ error: "Method not allowed" });
-  }
+router.post("/analyze", async (req, res) => {
+  const apiKey = process.env.OPENAI_API_KEY;
+  if (!apiKey) return res.status(500).json({ error: "OPENAI_API_KEY is missing" });
 
   const { imageBase64 } = req.body;
-  if (!imageBase64) {
-    return res.status(400).json({ error: "No image provided" });
-  }
+  if (!imageBase64) return res.status(400).json({ error: "ต้องส่ง imageBase64" });
+
+  // 🔮 Prompt ที่ใช้บอก AI
+  const prompt = `
+คุณคือหมอดูลายมือ ให้คุณวิเคราะห์จากรูปภาพฝ่ามือ (ไม่ต้องอธิบายเรื่องการถ่ายรูป)
+ให้ตีความเส้นลายมือออกมาเป็น:
+
+- เส้นชีวิต
+- เส้นสมอง
+- เส้นหัวใจ
+- เส้นวาสนา
+
+ตอบเป็นภาษาไทย กระชับ แต่ชัดเจน
+  `;
 
   try {
-    const API_KEY = process.env.GEMINI_API_KEY;
-    if (!API_KEY) throw new Error("GEMINI_API_KEY not set");
-
-    // Prompt ภาษาไทยสำหรับ Gemini
-    const prompt = `
-      วิเคราะห์ลายมือจากรูปภาพนี้
-      อธิบายรายละเอียดของแต่ละเส้นหลัก:
-      **เส้นชีวิต**, **เส้นสมอง**, **เส้นหัวใจ**, **เส้นวาสนา**
-      ให้คำแนะนำเชิงบวกละเอียด
-      ตอบเป็นภาษาไทยและจัดหัวข้อด้วย ** สำหรับแต่ละเส้น
-    `;
-
-    // เรียก Gemini 2.0 API
-    const response = await fetch(
-      "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent",
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "X-goog-api-key": API_KEY,
-        },
-        body: JSON.stringify({
-          contents: [
-            {
-              parts: [
-                { text: prompt },
-                { text: "\n\nรูปภาพ Base64:" + imageBase64 }
-              ]
-            }
-          ]
-        }),
-      }
-    );
+    const response = await fetch("https://api.openai.com/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        "Authorization": `Bearer ${apiKey}`,
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        model: "gpt-4o-mini", // หรือ gpt-4o, gpt-3.5-turbo
+        messages: [
+          { role: "system", content: "คุณคือผู้เชี่ยวชาญการทำนายลายมือ" },
+          { role: "user", content: prompt }
+        ],
+        temperature: 0.7
+      })
+    });
 
     const data = await response.json();
-    console.log("Gemini API Response:", data);
+    if (data.error) return res.status(500).json({ error: data.error.message });
 
-    // ดึงข้อความจาก response
-    const resultText = data?.candidates?.[0]?.content || data?.output?.[0]?.content || "ไม่พบผลลัพธ์";
+    const resultText = data.choices[0].message.content;
+    res.json({ result: resultText });
 
-    res.status(200).json({ result: resultText });
-  } catch (err) {
-    console.error("Error in /api/analyze:", err);
-    res.status(500).json({
-      error: "เกิดข้อผิดพลาดในการวิเคราะห์ ลองตรวจสอบ API Key หรือรูปภาพใหม่",
-      details: err.message,
-    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "เกิดข้อผิดพลาดจาก OpenAI API" });
   }
-}
+});
+
+export default router;
