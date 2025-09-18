@@ -3,103 +3,80 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>ทำนายลายมือด้วย AI</title>
+  <title>ทำนายฝัน พร้อมเลขเด็ด</title>
   <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@400;700&display=swap" rel="stylesheet">
   <style>
-    body { font-family: 'Kanit', sans-serif; background:#fef9f4; color:#333; text-align:center; padding:20px; }
-    header { background: linear-gradient(90deg, #ffb347, #ffcc33); padding:20px; border-radius:15px; margin-bottom:20px; color:#222; }
+    body { font-family: 'Kanit', sans-serif; background:#fdf6e3; color:#333; text-align:center; padding:20px; }
+    header { background: linear-gradient(90deg, #ff9966, #ff5e62); padding:20px; border-radius:10px; margin-bottom:20px; color:white; }
     input, button { padding:10px; margin:10px 0; border-radius:8px; border:1px solid #ccc; }
-    button { background:#ff9800; color:#fff; border:none; cursor:pointer; transition:0.3s; }
-    button:hover { background:#e68900; }
-    .preview img { max-width:100%; border-radius:15px; margin-top:10px; box-shadow:0 3px 6px rgba(0,0,0,0.2); }
-    .result-section { display:none; margin-top:20px; }
-    .card { background:#fff3e0; padding:15px; border-radius:12px; margin-bottom:10px; text-align:left; box-shadow:0 2px 4px rgba(0,0,0,0.1); }
-    footer { margin-top:30px; font-size:14px; color:#777; }
+    button { background:#ff5e62; color:white; cursor:pointer; }
+    button:hover { background:#e14a52; }
+    .card { background:white; padding:15px; border-radius:12px; margin:15px auto; max-width:600px; box-shadow:0 4px 8px rgba(0,0,0,0.1); text-align:left; }
+    footer { margin-top:30px; font-size:14px; color:#555; }
   </style>
 </head>
 <body>
   <header>
-    <h1>🔮 ทำนายลายมือด้วย AI</h1>
-    <p>วิเคราะห์เส้นชีวิต เส้นสมอง เส้นหัวใจ และเส้นวาสนา</p>
+    <h1>🔮 ทำนายฝัน พร้อมเลขเด็ด</h1>
+    <p>พิมพ์ความฝันของคุณ แล้วรับคำทำนายทันที</p>
   </header>
 
-  <input type="file" id="palmInput" accept="image/*"><br>
-  <div class="preview" id="preview"><p style="color:#aaa;">อัปโหลดรูปฝ่ามือของคุณ</p></div>
-  <button id="analyzeBtn">วิเคราะห์เส้นลายมือ</button>
-  <p id="statusText" style="color:#ff6347;font-weight:bold;"></p>
+  <input type="text" id="dreamInput" placeholder="พิมพ์ความฝันของคุณที่นี่..." size="40">
+  <br>
+  <button id="analyzeBtn">ทำนายฝัน</button>
+  <p id="statusText" style="color:#ff5e62;font-weight:bold;"></p>
 
-  <section class="result-section" id="resultSection">
-    <div class="card"><h3>เส้นชีวิต</h3><p id="lifeLine"></p></div>
-    <div class="card"><h3>เส้นสมอง</h3><p id="headLine"></p></div>
-    <div class="card"><h3>เส้นหัวใจ</h3><p id="heartLine"></p></div>
-    <div class="card"><h3>เส้นวาสนา</h3><p id="fateLine"></p></div>
+  <section id="resultSection" style="display:none;">
+    <div class="card">
+      <h3>📖 คำทำนาย</h3>
+      <p id="dreamMeaning"></p>
+    </div>
+    <div class="card">
+      <h3>🎲 เลขเด็ด</h3>
+      <p id="luckyNumbers"></p>
+    </div>
   </section>
 
-  <footer>พัฒนาโดย ธันยรัศมิ์ ประภาจิรสกุล</footer>
+  <footer>
+    พัฒนาโดย ธันยรัศมิ์ ประภาจิรสกุล
+  </footer>
 
-  <script>
-    const palmInput = document.getElementById("palmInput");
-    const preview = document.getElementById("preview");
-    const analyzeBtn = document.getElementById("analyzeBtn");
-    const statusText = document.getElementById("statusText");
-    const resultSection = document.getElementById("resultSection");
+<script>
+const input = document.getElementById("dreamInput");
+const button = document.getElementById("analyzeBtn");
+const statusText = document.getElementById("statusText");
+const resultSection = document.getElementById("resultSection");
+const dreamMeaning = document.getElementById("dreamMeaning");
+const luckyNumbers = document.getElementById("luckyNumbers");
 
-    let uploadedFile = null;
+button.addEventListener("click", async () => {
+  const dream = input.value.trim();
+  if (!dream) return alert("กรุณาพิมพ์ความฝันก่อน");
 
-    palmInput.addEventListener("change", e => {
-      const file = e.target.files[0];
-      if (!file || !file.type.startsWith("image/")) return alert("กรุณาอัปโหลดรูปภาพเท่านั้น");
-      uploadedFile = file;
-      const reader = new FileReader();
-      reader.onload = evt => preview.innerHTML = `<img src="${evt.target.result}">`;
-      reader.readAsDataURL(file);
-      statusText.innerText = "";
-      resultSection.style.display = "none";
+  button.disabled = true;
+  button.innerText = "กำลังทำนาย...";
+  statusText.innerText = "🔮 กำลังประมวลผล...";
+
+  try {
+    const response = await fetch("/api/dream", {
+      method:"POST",
+      headers:{ "Content-Type":"application/json" },
+      body: JSON.stringify({ dream })
     });
 
-    analyzeBtn.addEventListener("click", async () => {
-      if (!uploadedFile) return alert("กรุณาอัปโหลดรูปภาพก่อน");
-
-      analyzeBtn.disabled = true;
-      analyzeBtn.innerText = "กำลังวิเคราะห์...";
-      statusText.innerText = "กำลังส่งข้อมูล...";
-
-      const reader = new FileReader();
-      reader.onload = async evt => {
-        const imageBase64 = evt.target.result.split(",")[1];
-
-        try {
-          const response = await fetch("/api/analyze", {
-            method:"POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ imageBase64 })
-          });
-          const data = await response.json();
-          const text = data.result;
-
-          const life = text.match(/เส้นชีวิต(.*?)(?=เส้นสมอง|เส้นหัวใจ|เส้นวาสนา|$)/s);
-          const head = text.match(/เส้นสมอง(.*?)(?=เส้นหัวใจ|เส้นวาสนา|$)/s);
-          const heart = text.match(/เส้นหัวใจ(.*?)(?=เส้นวาสนา|$)/s);
-          const fate = text.match(/เส้นวาสนา(.*)/s);
-
-          document.getElementById("lifeLine").innerText = life ? life[1].trim() : "ไม่พบการวิเคราะห์";
-          document.getElementById("headLine").innerText = head ? head[1].trim() : "ไม่พบการวิเคราะห์";
-          document.getElementById("heartLine").innerText = heart ? heart[1].trim() : "ไม่พบการวิเคราะห์";
-          document.getElementById("fateLine").innerText = fate ? fate[1].trim() : "ไม่พบการวิเคราะห์";
-
-          statusText.innerText = "✅ วิเคราะห์เสร็จสมบูรณ์";
-          resultSection.style.display = "block";
-
-        } catch(err){
-          console.error(err);
-          statusText.innerText = "❌ เกิดข้อผิดพลาดในการวิเคราะห์";
-        } finally{
-          analyzeBtn.disabled = false;
-          analyzeBtn.innerText = "วิเคราะห์เส้นลายมือ";
-        }
-      };
-      reader.readAsDataURL(uploadedFile);
-    });
-  </script>
+    const data = await response.json();
+    dreamMeaning.innerText = data.meaning || "ไม่พบคำทำนาย";
+    luckyNumbers.innerText = data.numbers || "ไม่มีเลขเด็ด";
+    resultSection.style.display = "block";
+    statusText.innerText = "✅ สำเร็จ!";
+  } catch (err) {
+    console.error(err);
+    statusText.innerText = "❌ เกิดข้อผิดพลาด";
+  } finally {
+    button.disabled = false;
+    button.innerText = "ทำนายฝัน";
+  }
+});
+</script>
 </body>
 </html>
