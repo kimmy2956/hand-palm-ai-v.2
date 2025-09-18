@@ -1,16 +1,16 @@
 {
-  "name": "palm-reading-ai",
+  "name": "hand-palm-ai-v.2",
   "version": "1.0.0",
-  "main": "index.js",
+  "description": "เว็บทำนายฝันพร้อมเลขเด็ด (Frontend + Backend สำหรับ Vercel)",
+  "main": "api/hand-palm-ai-v.2.js",
   "scripts": {
-    "dev": "node server.js",
-    "start": "node server.js"
+    "dev": "vercel dev",
+    "start": "vercel dev"
   },
   "dependencies": {
-    "express": "^4.19.2",
-    "node-fetch": "^3.3.2",
-    "cors": "^2.8.5"
     "openai": "^4.0.0"
   },
-  "type": "module"
+  "engines": {
+    "node": "18.x"
+  }
 }
