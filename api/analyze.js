@@ -1,54 +1,44 @@
-import express from "express";
-import fetch from "node-fetch";
+import OpenAI from "openai";
 
-const app = express();
-app.use(express.json({ limit: "10mb" }));
-
-app.post("/api/analyze", async (req, res) => {
-  const apiKey = process.env.OPENAI_API_KEY;
-  if (!apiKey) return res.status(500).json({ error: "OPENAI_API_KEY is missing" });
-
-  const { imageBase64 } = req.body;
-  if (!imageBase64) return res.status(400).json({ error: "ต้องส่ง imageBase64" });
-
-  const prompt = `
-คุณคือหมอดูลายมือ วิเคราะห์จากรูปภาพฝ่ามือ (ไม่ต้องพูดถึงการอัปโหลด)
-ให้ตีความเส้นลายมือออกมาเป็นหัวข้อดังนี้:
-
-- เส้นชีวิต
-- เส้นสมอง
-- เส้นหัวใจ
-- เส้นวาสนา
-
-ตอบเป็นภาษาไทย กระชับ ชัดเจน และเชิงบวก
-  `;
-
-  try {
-    const response = await fetch("https://api.openai.com/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        "Authorization": `Bearer ${apiKey}`,
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify({
-        model: "gpt-4o-mini",
-        messages: [
-          { role: "system", content: "คุณคือผู้เชี่ยวชาญการทำนายลายมือ" },
-          { role: "user", content: prompt }
-        ],
-        temperature: 0.7
-      })
-    });
-
-    const data = await response.json();
-    if (data.error) return res.status(500).json({ error: data.error.message });
-
-    const resultText = data.choices[0].message.content;
-    res.json({ result: resultText });
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ error: "เกิดข้อผิดพลาดจาก OpenAI API" });
-  }
+const client = new OpenAI({
+  apiKey: process.env.OPENAI_API_KEY,
 });
 
-export default app;
+export default async function handler(req, res) {
+  if (req.method !== "POST") {
+    return res.status(405).json({ error: "Method not allowed" });
+  }
+
+  try {
+    const { dream } = req.body;
+
+    const prompt = `
+คุณคือผู้เชี่ยวชาญการทำนายฝันแบบไทย
+ความฝัน: "${dream}"
+
+กรุณาตอบเป็นภาษาไทย โดยแบ่งเป็น 2 ส่วน:
+1. 📖 คำทำนาย: อธิบายความหมายของความฝันนี้
+2. 🎲 เลขเด็ด: ให้เลขเด่น 2-3 ตัว (เช่น 05, 27, 359)
+    `;
+
+    const completion = await client.chat.completions.create({
+      model: "gpt-4o-mini",
+      messages: [{ role: "user", content: prompt }],
+    });
+
+    const text = completion.choices[0].message.content;
+
+    // แยกคำตอบ
+    const meaningMatch = text.match(/คำทำนาย[:：](.*?)(?=เลขเด็ด|$)/s);
+    const numberMatch = text.match(/เลขเด็ด[:：](.*)/s);
+
+    res.status(200).json({
+      meaning: meaningMatch ? meaningMatch[1].trim() : text,
+      numbers: numberMatch ? numberMatch[1].trim() : "ไม่มีเลขเด็ด",
+    });
+
+  } catch (err) {
+    console.error("API Error:", err);
+    res.status(500).json({ error: "เกิดข้อผิดพลาด", details: err.message });
+  }
+}
