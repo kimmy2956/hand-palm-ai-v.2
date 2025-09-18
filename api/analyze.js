@@ -1,26 +1,26 @@
 import express from "express";
 import fetch from "node-fetch";
 
-const router = express.Router();
+const app = express();
+app.use(express.json({ limit: "10mb" }));
 
-router.post("/analyze", async (req, res) => {
+app.post("/api/analyze", async (req, res) => {
   const apiKey = process.env.OPENAI_API_KEY;
   if (!apiKey) return res.status(500).json({ error: "OPENAI_API_KEY is missing" });
 
   const { imageBase64 } = req.body;
   if (!imageBase64) return res.status(400).json({ error: "ต้องส่ง imageBase64" });
 
-  // 🔮 Prompt ที่ใช้บอก AI
   const prompt = `
-คุณคือหมอดูลายมือ ให้คุณวิเคราะห์จากรูปภาพฝ่ามือ (ไม่ต้องอธิบายเรื่องการถ่ายรูป)
-ให้ตีความเส้นลายมือออกมาเป็น:
+คุณคือหมอดูลายมือ วิเคราะห์จากรูปภาพฝ่ามือ (ไม่ต้องพูดถึงการอัปโหลด)
+ให้ตีความเส้นลายมือออกมาเป็นหัวข้อดังนี้:
 
 - เส้นชีวิต
 - เส้นสมอง
 - เส้นหัวใจ
 - เส้นวาสนา
 
-ตอบเป็นภาษาไทย กระชับ แต่ชัดเจน
+ตอบเป็นภาษาไทย กระชับ ชัดเจน และเชิงบวก
   `;
 
   try {
@@ -31,7 +31,7 @@ router.post("/analyze", async (req, res) => {
         "Content-Type": "application/json"
       },
       body: JSON.stringify({
-        model: "gpt-4o-mini", // หรือ gpt-4o, gpt-3.5-turbo
+        model: "gpt-4o-mini",
         messages: [
           { role: "system", content: "คุณคือผู้เชี่ยวชาญการทำนายลายมือ" },
           { role: "user", content: prompt }
@@ -45,11 +45,10 @@ router.post("/analyze", async (req, res) => {
 
     const resultText = data.choices[0].message.content;
     res.json({ result: resultText });
-
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: "เกิดข้อผิดพลาดจาก OpenAI API" });
   }
 });
 
-export default router;
+export default app;
