@@ -1,100 +1,105 @@
 <!DOCTYPE html>
 <html lang="th">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>ทำนายลายมือ</title>
-<link href="https://fonts.googleapis.com/css2?family=Kanit:wght@400;700&display=swap" rel="stylesheet">
-<style>
-body { font-family: 'Kanit', sans-serif; background:#f5f5dc; color:#333; margin:0; padding:0; text-align:center; display:flex; flex-direction:column; min-height:100vh; }
-header { background: linear-gradient(90deg, #ffb347, #ffcc33); padding:30px; border-radius:20px 20px 0 0; box-shadow:0 4px 10px rgba(0,0,0,0.1);}
-main { flex:1; max-width:700px; margin:20px auto; padding:0 20px;}
-input[type="file"]{display:block;margin:20px auto;padding:12px;border-radius:10px;border:1px solid #ccc;background:#fff;}
-button{padding:12px 25px;background:#ff9800;color:white;font-weight:bold;border:none;border-radius:10px;cursor:pointer;transition:0.3s;display:block;margin:10px auto;font-size:1.1em;}
-button:hover{transform:scale(1.05);}
-.preview{margin:20px auto;text-align:center;border:2px dashed #ffcc33;padding:20px;border-radius:15px;background:#fafafa;height:250px;display:flex;align-items:center;justify-content:center;}
-.preview img{max-width:100%;max-height:100%;border-radius:15px;box-shadow:0 5px 15px rgba(0,0,0,0.2);}
-.result-section{display:none;margin-top:20px;gap:15px;}
-.result-section.show{display:grid;}
-.card{background:#fff3e0;padding:15px 20px;border-radius:15px;box-shadow:0 4px 10px rgba(0,0,0,0.1);}
-.card h3{color:#d84315;margin-bottom:8px;}
-.card p{font-size:0.95rem;line-height:1.5;}
-#statusText{font-weight:bold;color:#d84315;margin-top:10px;}
-footer { background:#ffe0b2; padding:15px; border-radius:0 0 20px 20px; color:#5d4037; text-align:center; margin-top:20px; }
-</style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ทำนายลายมือด้วย AI</title>
+  <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@400;700&display=swap" rel="stylesheet">
+  <style>
+    body { font-family: 'Kanit', sans-serif; background:#fef9f4; color:#333; text-align:center; padding:20px; }
+    header { background: linear-gradient(90deg, #ffb347, #ffcc33); padding:20px; border-radius:15px; margin-bottom:20px; color:#222; }
+    input, button { padding:10px; margin:10px 0; border-radius:8px; border:1px solid #ccc; }
+    button { background:#ff9800; color:#fff; border:none; cursor:pointer; transition:0.3s; }
+    button:hover { background:#e68900; }
+    .preview img { max-width:100%; border-radius:15px; margin-top:10px; box-shadow:0 3px 6px rgba(0,0,0,0.2); }
+    .result-section { display:none; margin-top:20px; }
+    .card { background:#fff3e0; padding:15px; border-radius:12px; margin-bottom:10px; text-align:left; box-shadow:0 2px 4px rgba(0,0,0,0.1); }
+    footer { margin-top:30px; font-size:14px; color:#777; }
+  </style>
 </head>
 <body>
-<header>
-<h1>ทำนายลายมือ</h1>
-<p>วิเคราะห์เส้นชีวิต เส้นสมอง เส้นหัวใจ และเส้นวาสนา พร้อมคำแนะนำเชิงบวก</p>
-</header>
-<main>
-<input type="file" id="palmInput" accept="image/*">
-<div class="preview" id="preview"><p style="color:#aaa;">รอรูปภาพ...</p></div>
-<button id="analyzeBtn">วิเคราะห์เส้นลายมือ</button>
-<p id="statusText"></p>
+  <header>
+    <h1>🔮 ทำนายลายมือด้วย AI</h1>
+    <p>วิเคราะห์เส้นชีวิต เส้นสมอง เส้นหัวใจ และเส้นวาสนา</p>
+  </header>
 
-<section class="result-section" id="resultSection">
-<div class="card"><h3>เส้นชีวิต</h3><p id="lifeLine"></p></div>
-<div class="card"><h3>เส้นสมอง</h3><p id="headLine"></p></div>
-<div class="card"><h3>เส้นหัวใจ</h3><p id="heartLine"></p></div>
-<div class="card"><h3>เส้นวาสนา</h3><p id="fateLine"></p></div>
-</section>
-</main>
+  <input type="file" id="palmInput" accept="image/*"><br>
+  <div class="preview" id="preview"><p style="color:#aaa;">อัปโหลดรูปฝ่ามือของคุณ</p></div>
+  <button id="analyzeBtn">วิเคราะห์เส้นลายมือ</button>
+  <p id="statusText" style="color:#ff6347;font-weight:bold;"></p>
 
-<footer>
-พัฒนาโดย ธันยรัศมิ์ ประภาจิรสกุล
-</footer>
+  <section class="result-section" id="resultSection">
+    <div class="card"><h3>เส้นชีวิต</h3><p id="lifeLine"></p></div>
+    <div class="card"><h3>เส้นสมอง</h3><p id="headLine"></p></div>
+    <div class="card"><h3>เส้นหัวใจ</h3><p id="heartLine"></p></div>
+    <div class="card"><h3>เส้นวาสนา</h3><p id="fateLine"></p></div>
+  </section>
 
-<script>
-const palmInput = document.getElementById("palmInput");
-const preview = document.getElementById("preview");
-const analyzeBtn = document.getElementById("analyzeBtn");
-const statusText = document.getElementById("statusText");
-const resultSection = document.getElementById("resultSection");
-let uploadedFile = null;
+  <footer>พัฒนาโดย ธันยรัศมิ์ ประภาจิรสกุล</footer>
 
-palmInput.addEventListener("change", e=>{
-  const file=e.target.files[0];
-  if(!file||!file.type.startsWith("image/")) return alert("กรุณาอัปโหลดรูปภาพเท่านั้น");
-  uploadedFile=file;
-  const reader=new FileReader();
-  reader.onload=evt=>preview.innerHTML=`<img src="${evt.target.result}">`;
-  reader.readAsDataURL(file);
-  statusText.innerText="";
-  resultSection.classList.remove("show");
-});
+  <script>
+    const palmInput = document.getElementById("palmInput");
+    const preview = document.getElementById("preview");
+    const analyzeBtn = document.getElementById("analyzeBtn");
+    const statusText = document.getElementById("statusText");
+    const resultSection = document.getElementById("resultSection");
 
-analyzeBtn.addEventListener("click", async ()=>{
-  if(!uploadedFile) return alert("กรุณาอัปโหลดรูปภาพก่อน");
-  analyzeBtn.disabled=true; analyzeBtn.innerText="กำลังวิเคราะห์..."; statusText.innerText="กำลังส่งข้อมูล...";
+    let uploadedFile = null;
 
-  const reader=new FileReader();
-  reader.onload=async evt=>{
-    const imageBase64=evt.target.result.split(",")[1];
-    try{
-      const response=await fetch("/api/analyze",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({imageBase64})});
-      const data=await response.json();
-      if(data.error){statusText.innerText=data.error; analyzeBtn.disabled=false; analyzeBtn.innerText="วิเคราะห์เส้นลายมือ"; return;}
+    palmInput.addEventListener("change", e => {
+      const file = e.target.files[0];
+      if (!file || !file.type.startsWith("image/")) return alert("กรุณาอัปโหลดรูปภาพเท่านั้น");
+      uploadedFile = file;
+      const reader = new FileReader();
+      reader.onload = evt => preview.innerHTML = `<img src="${evt.target.result}">`;
+      reader.readAsDataURL(file);
+      statusText.innerText = "";
+      resultSection.style.display = "none";
+    });
 
-      const text=data.result;
-      const life=text.match(/\*\*เส้นชีวิต\*\*(.*?)(?=\*\*เส้นสมอง|\*\*เส้นหัวใจ|\*\*เส้นวาสนา|$)/s);
-      const head=text.match(/\*\*เส้นสมอง\*\*(.*?)(?=\*\*เส้นหัวใจ|\*\*เส้นวาสนา|$)/s);
-      const heart=text.match(/\*\*เส้นหัวใจ\*\*(.*?)(?=\*\*เส้นวาสนา|$)/s);
-      const fate=text.match(/\*\*เส้นวาสนา\*\*(.*)/s);
+    analyzeBtn.addEventListener("click", async () => {
+      if (!uploadedFile) return alert("กรุณาอัปโหลดรูปภาพก่อน");
 
-      document.getElementById("lifeLine").innerText=life?life[1].trim():"ไม่พบการวิเคราะห์";
-      document.getElementById("headLine").innerText=head?head[1].trim():"ไม่พบการวิเคราะห์";
-      document.getElementById("heartLine").innerText=heart?heart[1].trim():"ไม่พบการวิเคราะห์";
-      document.getElementById("fateLine").innerText=fate?fate[1].trim():"ไม่พบการวิเคราะห์";
+      analyzeBtn.disabled = true;
+      analyzeBtn.innerText = "กำลังวิเคราะห์...";
+      statusText.innerText = "กำลังส่งข้อมูล...";
 
-      statusText.innerText="วิเคราะห์เสร็จสมบูรณ์";
-      resultSection.classList.add("show");
-    }catch(err){console.error(err); statusText.innerText="เกิดข้อผิดพลาดในการวิเคราะห์";}
-    finally{analyzeBtn.disabled=false; analyzeBtn.innerText="วิเคราะห์เส้นลายมือ";}
-  };
-  reader.readAsDataURL(uploadedFile);
-});
-</script>
+      const reader = new FileReader();
+      reader.onload = async evt => {
+        const imageBase64 = evt.target.result.split(",")[1];
+
+        try {
+          const response = await fetch("/api/analyze", {
+            method:"POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ imageBase64 })
+          });
+          const data = await response.json();
+          const text = data.result;
+
+          const life = text.match(/เส้นชีวิต(.*?)(?=เส้นสมอง|เส้นหัวใจ|เส้นวาสนา|$)/s);
+          const head = text.match(/เส้นสมอง(.*?)(?=เส้นหัวใจ|เส้นวาสนา|$)/s);
+          const heart = text.match(/เส้นหัวใจ(.*?)(?=เส้นวาสนา|$)/s);
+          const fate = text.match(/เส้นวาสนา(.*)/s);
+
+          document.getElementById("lifeLine").innerText = life ? life[1].trim() : "ไม่พบการวิเคราะห์";
+          document.getElementById("headLine").innerText = head ? head[1].trim() : "ไม่พบการวิเคราะห์";
+          document.getElementById("heartLine").innerText = heart ? heart[1].trim() : "ไม่พบการวิเคราะห์";
+          document.getElementById("fateLine").innerText = fate ? fate[1].trim() : "ไม่พบการวิเคราะห์";
+
+          statusText.innerText = "✅ วิเคราะห์เสร็จสมบูรณ์";
+          resultSection.style.display = "block";
+
+        } catch(err){
+          console.error(err);
+          statusText.innerText = "❌ เกิดข้อผิดพลาดในการวิเคราะห์";
+        } finally{
+          analyzeBtn.disabled = false;
+          analyzeBtn.innerText = "วิเคราะห์เส้นลายมือ";
+        }
+      };
+      reader.readAsDataURL(uploadedFile);
+    });
+  </script>
 </body>
 </html>
