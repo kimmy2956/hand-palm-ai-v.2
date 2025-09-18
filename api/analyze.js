@@ -16,45 +16,46 @@ export default async function handler(req, res) {
     const API_KEY = process.env.GEMINI_API_KEY;
     if (!API_KEY) throw new Error("GEMINI_API_KEY not set");
 
-    // Prompt สำหรับ Gemini
+    // Prompt ภาษาไทยสำหรับ Gemini
     const prompt = `
       วิเคราะห์ลายมือจากรูปภาพนี้
-      อธิบายรายละเอียดของแต่ละเส้นหลัก: 
+      อธิบายรายละเอียดของแต่ละเส้นหลัก:
       **เส้นชีวิต**, **เส้นสมอง**, **เส้นหัวใจ**, **เส้นวาสนา**
-      ให้คำแนะนำเชิงบวกละเอียดและชัดเจน
+      ให้คำแนะนำเชิงบวกละเอียด
       ตอบเป็นภาษาไทยและจัดหัวข้อด้วย ** สำหรับแต่ละเส้น
     `;
 
-    // เรียก Google Gemini API
+    // เรียก Gemini 2.0 API
     const response = await fetch(
-      "https://generativeai.googleapis.com/v1beta2/models/gemini-1.5-flash-latest:generateText",
+      "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent",
       {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "Authorization": `Bearer ${API_KEY}`,
+          "X-goog-api-key": API_KEY,
         },
         body: JSON.stringify({
-          prompt,
-          image: { data: imageBase64, mimeType: "image/png" },
+          contents: [
+            {
+              parts: [
+                { text: prompt },
+                { text: "\n\nรูปภาพ Base64:" + imageBase64 }
+              ]
+            }
+          ]
         }),
       }
     );
 
-    // แปลง response เป็น JSON
     const data = await response.json();
-    console.log("Gemini API Response:", data); // เพิ่ม log เพื่อตรวจสอบ
+    console.log("Gemini API Response:", data);
 
-    // ตรวจสอบ output
-    if (!data.output || !data.output[0] || !data.output[0].content) {
-      return res.status(200).json({ result: "ไม่พบผลลัพธ์จาก Gemini API" });
-    }
+    // ดึงข้อความจาก response
+    const resultText = data?.candidates?.[0]?.content || data?.output?.[0]?.content || "ไม่พบผลลัพธ์";
 
-    res.status(200).json({ result: data.output[0].content });
+    res.status(200).json({ result: resultText });
   } catch (err) {
     console.error("Error in /api/analyze:", err);
-
-    // แจ้งรายละเอียด error กลับ frontend (ไม่เปิดเผย API Key)
     res.status(500).json({
       error: "เกิดข้อผิดพลาดในการวิเคราะห์ ลองตรวจสอบ API Key หรือรูปภาพใหม่",
       details: err.message,
