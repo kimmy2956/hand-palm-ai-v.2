@@ -1,15 +1,101 @@
-
 <!DOCTYPE html>
 <html lang="th">
 <head>
 <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>ทำนายลายมือ</title>
+<link href="https://fonts.googleapis.com/css2?family=Kanit:wght@400;700&display=swap" rel="stylesheet">
+<style>
+body { font-family: 'Kanit', sans-serif; background:#f5f5dc; color:#333; text-align:center; padding:20px; }
+header { background: linear-gradient(90deg, #ffb347, #ffcc33); padding:20px; border-radius:10px; margin-bottom:20px; }
+input, button { padding:10px; margin:10px 0; }
+.preview img { max-width:100%; border-radius:10px; }
+.result-section { display:none; margin-top:20px; }
+.card { background:#fff3e0; padding:10px; border-radius:10px; margin-bottom:10px; }
+</style>
 </head>
 <body>
+<header>
 <h1>ทำนายลายมือ</h1>
-<input type="file" id="palmInput" accept="image/*">
-<button class="analyze-btn">วิเคราะห์</button>
-<div id="resultSection"></div>
-<script src="main.js"></script>
+<p>วิเคราะห์เส้นชีวิต เส้นสมอง เส้นหัวใจ และเส้นวาสนา</p>
+</header>
+
+<input type="file" id="palmInput" accept="image/*"><br>
+<div class="preview" id="preview"><p style="color:#aaa;">รอรูปภาพ...</p></div>
+<button id="analyzeBtn">วิเคราะห์เส้นลายมือ</button>
+<p id="statusText" style="color:#ff6347;font-weight:bold;"></p>
+
+<section class="result-section" id="resultSection">
+<div class="card"><h3>เส้นชีวิต</h3><p id="lifeLine"></p></div>
+<div class="card"><h3>เส้นสมอง</h3><p id="headLine"></p></div>
+<div class="card"><h3>เส้นหัวใจ</h3><p id="heartLine"></p></div>
+<div class="card"><h3>เส้นวาสนา</h3><p id="fateLine"></p></div>
+</section>
+
+<script>
+const palmInput = document.getElementById("palmInput");
+const preview = document.getElementById("preview");
+const analyzeBtn = document.getElementById("analyzeBtn");
+const statusText = document.getElementById("statusText");
+const resultSection = document.getElementById("resultSection");
+
+let uploadedFile = null;
+
+palmInput.addEventListener("change", e => {
+  const file = e.target.files[0];
+  if (!file || !file.type.startsWith("image/")) return alert("กรุณาอัปโหลดรูปภาพเท่านั้น");
+  uploadedFile = file;
+  const reader = new FileReader();
+  reader.onload = evt => preview.innerHTML = `<img src="${evt.target.result}">`;
+  reader.readAsDataURL(file);
+  statusText.innerText = "";
+  resultSection.style.display = "none";
+});
+
+analyzeBtn.addEventListener("click", async () => {
+  if (!uploadedFile) return alert("กรุณาอัปโหลดรูปภาพก่อน");
+
+  analyzeBtn.disabled = true;
+  analyzeBtn.innerText = "กำลังวิเคราะห์...";
+  statusText.innerText = "กำลังส่งข้อมูล...";
+
+  const reader = new FileReader();
+  reader.onload = async evt => {
+    const imageBase64 = evt.target.result.split(",")[1];
+
+    try {
+      const response = await fetch("/api/analyze", {
+        method:"POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ imageBase64 })
+      });
+      const data = await response.json();
+      const text = data.result;
+
+      const life = text.match(/\*\*?เส้นชีวิต\*\*?(.*?)(?=\*\*?เส้นสมอง|\*\*?เส้นหัวใจ|\*\*?เส้นวาสนา|$)/s);
+      const head = text.match(/\*\*?เส้นสมอง\*\*?(.*?)(?=\*\*?เส้นหัวใจ|\*\*?เส้นวาสนา|$)/s);
+      const heart = text.match(/\*\*?เส้นหัวใจ\*\*?(.*?)(?=\*\*?เส้นวาสนา|$)/s);
+      const fate = text.match(/\*\*?เส้นวาสนา\*\*?(.*)/s);
+
+      document.getElementById("lifeLine").innerText = life ? life[1].trim() : "ไม่พบการวิเคราะห์";
+      document.getElementById("headLine").innerText = head ? head[1].trim() : "ไม่พบการวิเคราะห์";
+      document.getElementById("heartLine").innerText = heart ? heart[1].trim() : "ไม่พบการวิเคราะห์";
+      document.getElementById("fateLine").innerText = fate ? fate[1].trim() : "ไม่พบการวิเคราะห์";
+
+      statusText.innerText = "วิเคราะห์เสร็จสมบูรณ์";
+      resultSection.style.display = "block";
+
+    } catch(err){
+      console.error(err);
+      statusText.innerText = "เกิดข้อผิดพลาดในการวิเคราะห์";
+    } finally{
+      analyzeBtn.disabled = false;
+      analyzeBtn.innerText = "วิเคราะห์เส้นลายมือ";
+    }
+  };
+  reader.readAsDataURL(uploadedFile);
+});
+</script>
 </body>
 </html>
+
